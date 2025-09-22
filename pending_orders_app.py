@@ -1,16 +1,20 @@
 import streamlit as st
+import pandas as pd
 from snowflake.snowpark.functions import col, when_matched
 
 st.title(":cup_with_straw: Pending Smoothie orders :cup_with_straw:")
 st.write("Orders that need to be filled")
 
-
 cnx = st.connection("snowflake")
 session = cnx.session
-my_dataframe = session.table("smoothies.public.orders").filter(col("ORDER_FILLED") == 0).collect()
 
-if my_dataframe:
-    editable_df = st.data_editor(my_dataframe)
+# Get pending orders from Snowflake
+orders_rows = session.table("smoothies.public.orders").filter(col("ORDER_FILLED") == 0).collect()
+
+if orders_rows:
+    # Convert Snowpark Rows to Pandas DataFrame for Streamlit
+    orders_df = pd.DataFrame([row.as_dict() for row in orders_rows])
+    editable_df = st.data_editor(orders_df)
     submitted = st.button("Submit")
     if submitted:
         og_dataset = session.table("smoothies.public.orders")
